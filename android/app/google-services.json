@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "941480053841",
+    "firebase_url": "https://qintar-c79a0.firebaseio.com",
+    "project_id": "qintar-c79a0",
+    "storage_bucket": "qintar-c79a0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941480053841:android:9b9f63069e3a39698dfc70",
+        "android_client_info": {
+          "package_name": "com.youssefahmed.qintar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "941480053841-746jmqri53js8fmieb264cg9gdqs296l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsHHtSAcM27wYN-YEBoxbL0EDfnuBmTik"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "941480053841-746jmqri53js8fmieb264cg9gdqs296l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
