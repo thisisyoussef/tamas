@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qintar/screens/add_screen.dart';
+import 'package:qintar/screens/list_screen.dart';
 import 'package:qintar/screens/map_screen.dart';
 import 'package:qintar/services/places_service.dart';
 import 'package:provider/provider.dart';

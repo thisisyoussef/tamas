@@ -5,7 +5,7 @@ import 'dart:convert' as convert;
 
 class PlacesService extends ChangeNotifier {
   final key = 'AIzaSyDX17qdVwFzMv1VGg6SezoVhnpQ2aL8zcw';
-  static String typeOfPlace = "mosque";
+  static String typeOfPlace = "sports_complex";
   static String searchTerm = '';
   void search(String searchThis) {
     searchTerm = searchThis;

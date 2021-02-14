@@ -1,6 +1,11 @@
 import 'dart:async';
-import 'package:qintar/screens/add_screen.dart';
+import 'package:qintar/screens/list_screen.dart';
+import 'package:qintar/screens/profile/profile.dart';
+import 'package:qintar/screens/onboarding/components/launch_screen.dart';
+import 'package:qintar/screens/onboarding/intro_screen.dart';
+import 'add_event_screen.dart';
 import 'package:qintar/widgets/new_search_bar.dart';
+import 'package:qintar/widgets/list_card.dart';
 //
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,9 +22,11 @@ import 'package:qintar/models/prayer.dart';
 import 'dart:collection';
 import 'package:rxdart/rxdart.dart';
 import 'package:geoflutterfire/geoflutterfire.dart';
+import 'package:qintar/models/time_slot.dart';
 
 final _firestore = Firestore.instance;
 List<Prayer> prayers = [];
+List<ListCard> listCards = [];
 Set<Marker> _markers = HashSet<Marker>();
 GoogleMapController _controller;
 
@@ -31,11 +38,44 @@ class MapScreen extends StatefulWidget {
 }
 
 class MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
+  TabController _tabController;
   Location _locationTracker = Location();
   Stream _locationSubscription;
   Circle circle;
   static bool isSearching = false;
   static AnimationController iconController;
+  static const tabs = <Tab>[
+    Tab(
+//      icon: ,
+      child: Icon(
+        Icons.person,
+        color: Color(0xFF50B184),
+        size: 30,
+      ),
+    ),
+    Tab(
+      child: Icon(
+        Icons.map,
+        color: Color(0xFF50B184),
+        size: 30,
+      ),
+    ),
+    Tab(
+      child: Icon(
+        Icons.view_list,
+        color: Color(0xFF50B184),
+        size: 30,
+      ),
+    ),
+    Tab(
+//      icon: ,
+      child: Icon(
+        Icons.add_location,
+        color: Color(0xFF50B184),
+        size: 30,
+      ),
+    ),
+  ];
 
   void updateMarker(LocationData newLocalData) {
     LatLng latLng = LatLng(newLocalData.latitude, newLocalData.longitude);
@@ -52,8 +92,9 @@ class MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   @override
   void initState() {
-    // TODO: implement initState
+    _tabController = TabController(length: tabs.length, vsync: this);
     super.initState();
+    // TODO: implement initState
   }
 
   void getCurrentLocation() async {
@@ -69,7 +110,7 @@ class MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 bearing: 192,
                 target: LatLng(newLocalData.latitude, newLocalData.longitude),
                 tilt: 0,
-                zoom: 15.00)));
+                zoom: 10.00)));
         updateMarker(newLocalData);
       }
     }) as Stream;
@@ -88,9 +129,87 @@ class MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // _markers.add(Marker(position: LatLng(30.0288, 31.508639)));
     final currentPosition = Provider.of<Position>(context);
     var placesProvider = Provider.of<Future<List<Place>>>(context);
-    return FutureProvider(
-        create: (context) => placesProvider,
-        child: Scaffold(
+    return Scaffold(
+      appBar: null,
+      body: TabBarView(
+        controller: _tabController,
+        children: <Widget>[
+          ProfileScreen(),
+          buildStreamBuilder(currentPosition),
+          ListScreen(listCards),
+          AddEventScreen(),
+        ],
+      ),
+      bottomNavigationBar: Material(
+        color: Colors.white,
+        child: TabBar(
+          controller: _tabController,
+          tabs: tabs,
+        ),
+      ),
+    );
+  }
+
+  StreamBuilder<QuerySnapshot> buildStreamBuilder(Position currentPosition) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore.collection('upcomingprayers').snapshots(),
+      // ignore: missing_return
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(
+              backgroundColor: Colors.lightBlueAccent,
+            ),
+          );
+        }
+        List<Timestamp> timeSlots;
+        final fields = snapshot.data.documents;
+        listCards.clear();
+        print("cleared listcards");
+        for (var field in fields) {
+          final List<Timestamp> timeSlots = List.from(field.data['timeSlots']);
+          final String Id = field.documentID;
+          final city = field.data['city'];
+          print(city);
+          final place = field.data['place'];
+          final List<bool> amenities = List.from(field.data['amenities']);
+          double latitude;
+          double longitude;
+          try {
+            latitude = double.parse(field.data['latitude']);
+            longitude = double.parse(field.data['longitude']);
+          } catch (e) {
+            latitude = (field.data['latitude']);
+            longitude = (field.data['longitude']);
+          }
+          final prayer = Prayer(
+            Id: Id,
+            place: place,
+            city: city,
+            latitude: latitude,
+            longitude: longitude,
+          );
+          final listCard = ListCard(
+            Id: Id,
+            place: place,
+            city: city,
+            timeSlots: timeSlots,
+            amenities: amenities,
+          );
+          //Text('$name from $place');
+          prayers.add(prayer);
+          listCards.add(listCard);
+          latitude != null && longitude != null
+              ? _markers.add(
+                  Marker(
+                    infoWindow: InfoWindow(title: city),
+                    markerId: MarkerId(Id),
+                    position: LatLng(latitude, longitude),
+                  ),
+                )
+              : null;
+        }
+        return Scaffold(
           body: (currentPosition != null)
               ? Container(
                   child: (SafeArea(
@@ -101,140 +220,23 @@ class MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     alignment: Alignment.center,
                     children: <Widget>[
                       Positioned(
-                          child: Scaffold(
-                        body: Column(
-                          children: <Widget>[
-                            Expanded(
-                              child:
-                                  Stack(alignment: Alignment.center, children: <
-                                      Widget>[
-                                Container(
-                                  //  padding:
+                        child: Scaffold(
+                          body: Column(
+                            children: <Widget>[
+                              Expanded(
+                                child: Stack(
+                                    alignment: Alignment.center,
+                                    children: <Widget>[
+                                      Container(
+                                        //  padding:
 //                EdgeInsets.only(
 //                    bottom: MediaQuery.of(context).viewInsets.bottom),
-                                  child: StreamBuilder<QuerySnapshot>(
-                                    builder: (context, snapshot) {
-                                      if (!snapshot.hasData) {
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            backgroundColor:
-                                                Colors.lightBlueAccent,
-                                          ),
-                                        );
-                                      }
-                                      final messages =
-                                          snapshot.data.documents.reversed;
-                                      for (var message in messages) {
-                                        final String Id = message.documentID;
-                                        final name = message.data['name'];
-                                        final place = message.data['place'];
-                                        final double latitude = double.parse(
-                                            message.data['latitude']);
-                                        final double longitude = double.parse(
-                                            message.data['longitude']);
-                                        final prayer = Prayer(
-                                          Id: Id,
-                                          place: place,
-                                          name: name,
-                                          latitude: latitude,
-                                          longitude: longitude,
-                                        );
-                                        //Text('$name from $place');
-                                        prayers.add(prayer);
-                                        latitude != null && longitude != null
-                                            ? _markers.add(
-                                                Marker(
-                                                  markerId: MarkerId(Id),
-                                                  position: LatLng(
-                                                      latitude, longitude),
-                                                ),
-                                              )
-                                            : null;
-                                      }
-                                      return GoogleMap(
-                                        markers: _markers,
-                                        mapType: MapType.normal,
-                                        initialCameraPosition: CameraPosition(
-                                            zoom: 15,
-                                            target: LatLng(
-                                                currentPosition.latitude,
-                                                currentPosition.longitude)),
-                                        compassEnabled: false,
-                                        myLocationEnabled: true,
-                                        myLocationButtonEnabled: true,
-                                        onMapCreated:
-                                            // _firestore.collection('upcomingprayers').snapshots().listen();
-                                            (GoogleMapController controller) {
-                                          getCurrentLocation();
-                                          setState(() {
-                                            _controller = controller;
-                                          });
-                                        },
-                                        zoomGesturesEnabled: true,
-                                        mapToolbarEnabled: false,
-                                        zoomControlsEnabled: false,
-                                        circles: Set.of(
-                                            (circle != null) ? [circle] : []),
-                                      );
-                                    },
-                                    stream: _firestore
-                                        .collection('upcomingprayers')
-                                        .snapshots(),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 30,
-                                  left: 10,
-                                  child: FloatingActionButton(
-                                    child: Icon(Icons.add_location),
-                                    splashColor: Colors.yellow,
-                                    elevation: 15,
-                                    onPressed: () {
-                                      setState(() {
-                                        _markers.add(Marker(
-                                            markerId: (MarkerId('Yo')),
-                                            position:
-                                                LatLng(30.0288, 31.508639)));
-                                      });
-                                      getCurrentLocation();
-                                    },
-                                    backgroundColor: Colors.green,
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 30,
-                                  right: 10,
-                                  child: FloatingActionButton(
-                                    child: Icon(Icons.refresh),
-                                    splashColor: Colors.yellow,
-                                    elevation: 15,
-                                    onPressed: () {
-                                      setState(() {});
-                                      _markers = _markers;
-                                    },
-                                    backgroundColor: Colors.green,
-                                  ),
-                                ),
-                              ]),
-                            ),
-                          ],
-                        ),
-                      )),
-                      Positioned(
-                          child: Visibility(
-                        visible: isSearching,
-                        child: ListScreen(),
-                        // replacement: buildMapScreen(context, currentPosition),
-                      )),
-                      Positioned(
-                        top: MediaQuery.of(context).viewInsets.top + 10,
-                        child: GestureDetector(
-                          child: Container(child: Searchbar()),
-                          onTap: () {
-                            setState(() {
-                              isSearching = true;
-                            });
-                          },
+                                        child: buildGoogleMap(currentPosition),
+                                      ),
+                                    ]),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -243,6 +245,31 @@ class MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               : Center(
                   child: CircularProgressIndicator(),
                 ),
-        ));
+        );
+      },
+    );
+  }
+
+  GoogleMap buildGoogleMap(Position currentPosition) {
+    return GoogleMap(
+      markers: _markers,
+      mapType: MapType.normal,
+      initialCameraPosition: CameraPosition(
+          zoom: 12,
+          target: LatLng(currentPosition.latitude, currentPosition.longitude)),
+      compassEnabled: false,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
+      onMapCreated: (GoogleMapController controller) {
+        getCurrentLocation();
+        setState(() {
+          _controller = controller;
+        });
+      },
+      zoomGesturesEnabled: true,
+      mapToolbarEnabled: false,
+      zoomControlsEnabled: false,
+      circles: Set.of((circle != null) ? [circle] : []),
+    );
   }
 }

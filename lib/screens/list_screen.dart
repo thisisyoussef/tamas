@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qintar/models/time_slot.dart';
 import 'package:qintar/widgets/list_card.dart';
-
-final _firestore = Firestore.instance;
 
 class ListScreen extends StatefulWidget {
   List<ListCard> listCards = [];
@@ -22,14 +20,14 @@ class _ListScreenState extends State<ListScreen> {
         children: <Widget>[
           Expanded(
             child: ListView(
+              scrollDirection: Axis.vertical,
               reverse: true,
               children: widget.listCards,
-              padding: EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+              //padding: EdgeInsets.symmetric(horizontal: 25, vertical: 20),
             ),
           ),
         ],
       ),
     );
-    ;
   }
 }

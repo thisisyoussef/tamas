@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:connectivity/connectivity.dart';
 import 'package:qintar/screens/onboarding/components/onboard_page.dart';
-import 'package:qintar/screens/onboarding/onboarding.dart';
+import 'package:qintar/screens/onboarding/intro_screen.dart';
 
 class LaunchScreen extends StatefulWidget {
   static String id = "launch_screen";
@@ -42,7 +42,8 @@ class _LaunchScreenState extends State<LaunchScreen>
       setState(() {});
       print(launchAnimation.value);
       if (launchAnimation.value >= 1) {
-        Navigator.push(
+        Navigator.pushNamed(context, IntroScreen.id);
+        /* Navigator.push(
           context,
           PageRouteBuilder(
             transitionDuration: Duration(milliseconds: 700),
@@ -60,7 +61,7 @@ class _LaunchScreenState extends State<LaunchScreen>
               return IntroScreen();
             },
           ),
-        );
+        );*/
       }
     });
     _checkInternetConnectivity();
